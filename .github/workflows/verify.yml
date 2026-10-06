@@ -6,3 +6,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure
+  thread-sanitizer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build-tsan -DSCHEDULER_THREAD_SANITIZER=ON && cmake --build build-tsan && ctest --test-dir build-tsan --output-on-failure
