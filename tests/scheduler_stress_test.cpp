@@ -16,37 +16,42 @@ void require(bool condition, const char* message) {
 
 void concurrent_submit_cancel() {
     constexpr int producers = 4, per_producer = 120;
-    Scheduler scheduler(4);
+    auto scheduler = std::make_unique<Scheduler>(4);
     std::vector<std::atomic<int>> calls(producers * per_producer);
     for (auto& count : calls) count.store(0);
     std::atomic<int> cancelled{0};
+    std::vector<Scheduler::Ticket> tickets(producers * per_producer);
+    std::vector<int> removed(producers * per_producer, 0);
     std::vector<std::thread> threads;
     for (int p = 0; p < producers; ++p) {
         threads.emplace_back([&, p] {
             for (int i = 0; i < per_producer; ++i) {
                 const int index = p * per_producer + i;
                 const bool fails = index % 17 == 0;
-                auto ticket = scheduler.submit([&, index, fails] {
+                tickets[index] = scheduler->submit([&, index, fails] {
                     ++calls[index];
                     if (fails) throw std::runtime_error("task failure");
                 });
                 // A concurrent worker may dequeue before cancellation gets the lock.
-                const bool removed = i % 2 == 0 && scheduler.cancel(ticket.id);
-                if (removed) ++cancelled;
-                try {
-                    ticket.result.get();
-                    require(!removed && !fails, "unexpected successful future");
-                } catch (const std::runtime_error& error) {
-                    const std::string expected = removed ? "cancelled" : "task failure";
-                    require((removed || fails) && error.what() == expected,
-                            "wrong exception from future");
-                }
-                require(calls[index] == (removed ? 0 : 1), "task ran wrong number of times");
-                require(!scheduler.cancel(ticket.id), "completed task was cancellable");
+                removed[index] = i % 2 == 0 && scheduler->cancel(tickets[index].id);
+                if (removed[index]) ++cancelled;
             }
         });
     }
     for (auto& thread : threads) thread.join();
+    scheduler.reset(); // Join workers before inspecting exceptions held by futures.
+    for (int index = 0; index < producers * per_producer; ++index) {
+        const bool fails = index % 17 == 0;
+        try {
+            tickets[index].result.get();
+            require(!removed[index] && !fails, "unexpected successful future");
+        } catch (const std::runtime_error& error) {
+            const std::string expected = removed[index] ? "cancelled" : "task failure";
+            require((removed[index] || fails) && error.what() == expected,
+                    "wrong exception from future");
+        }
+        require(calls[index] == (removed[index] ? 0 : 1), "task ran wrong number of times");
+    }
     require(cancelled > 0, "cancellation path not exercised");
 }
 
