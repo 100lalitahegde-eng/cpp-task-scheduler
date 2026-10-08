@@ -1,8 +1,27 @@
 name: Verify
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [release, thread, address]
     steps:
       - uses: actions/checkout@v4
-      - run: cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure
+      - name: Configure
+        run: |
+          case '${{ matrix.mode }}' in
+            release) cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ;;
+            thread) cmake -S . -B build -DSCHEDULER_THREAD_SANITIZER=ON ;;
+            address) cmake -S . -B build -DSCHEDULER_ADDRESS_SANITIZER=ON ;;
+          esac
+      - run: cmake --build build --parallel 2
+      - run: ctest --test-dir build --output-on-failure
+        env:
+          TSAN_OPTIONS: halt_on_error=1
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
