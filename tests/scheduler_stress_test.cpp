@@ -19,7 +19,6 @@ void concurrent_submit_cancel() {
     auto scheduler = std::make_unique<Scheduler>(4);
     std::vector<std::atomic<int>> calls(producers * per_producer);
     for (auto& count : calls) count.store(0);
-    std::atomic<int> cancelled{0};
     std::vector<Scheduler::Ticket> tickets(producers * per_producer);
     std::vector<int> removed(producers * per_producer, 0);
     std::vector<std::thread> threads;
@@ -34,7 +33,6 @@ void concurrent_submit_cancel() {
                 });
                 // A concurrent worker may dequeue before cancellation gets the lock.
                 removed[index] = i % 2 == 0 && scheduler->cancel(tickets[index].id);
-                if (removed[index]) ++cancelled;
             }
         });
     }
@@ -52,7 +50,8 @@ void concurrent_submit_cancel() {
         }
         require(calls[index] == (removed[index] ? 0 : 1), "task ran wrong number of times");
     }
-    require(cancelled > 0, "cancellation path not exercised");
+    // Cancellation success depends on scheduling here; the gated test below
+    // deterministically exercises it even if every racing worker wins.
 }
 
 void shutdown_drains_and_queued_cancel() {
