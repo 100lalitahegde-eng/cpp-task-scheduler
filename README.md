@@ -128,6 +128,10 @@ schedules, not every possible interleaving. See Actions for results of a specifi
 
 ## Operating limits
 
+An optional [benchmark harness](benchmarks/README.md) measures finite CPU/blocking
+bursts and gated overload memory. [PERFORMANCE.md](PERFORMANCE.md) records a local
+54-measurement experiment, raw results and limits; benchmark targets default off.
+
 Running tasks must terminate voluntarily. Shutdown has no deadline and cannot forcibly
 interrupt arbitrary C++ code; a stuck task can block it indefinitely. Callers own object
 lifetime and task-capture lifetimes. The scheduler provides no durability, retries,

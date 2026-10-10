@@ -1,0 +1,27 @@
+{
+  "utc": "2026-10-10T17:22:39.808535+00:00",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "cpu_model": "AMD EPYC 7763 64-Core Processor",
+  "logical_cpus": 9,
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "source_revision": "b5d8c14c9f4b031fe9cc0827f3a8ad5cbeb1be38",
+  "build_command": "g++ -std=c++20 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -pthread -Iinclude src/scheduler.cpp benchmarks/scheduler_benchmark.cpp -o build-direct/scheduler_benchmark",
+  "binary": "/workspace/scratch/2ba53f238c45/cpp-task-scheduler/build-direct/scheduler_benchmark",
+  "repeats": 3,
+  "cases": 18,
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+  "limits": "Shared environment; no CPU pinning, warmup, baseline executor or SLO. Burst latency samples cover accepted tasks only. RSS includes allocator retention.",
+  "cpu.max": "800000 100000",
+  "memory.max": "8589934592",
+  "harness_sha256": "1a659dec9acd12463456742d6a3a713559c234f5c06a8db4a27320ccc77e298b"
+}

@@ -15,9 +15,9 @@ jobs:
       - name: Configure
         run: |
           case '${{ matrix.mode }}' in
-            release) cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ;;
-            thread) cmake -S . -B build -DSCHEDULER_THREAD_SANITIZER=ON ;;
-            address) cmake -S . -B build -DSCHEDULER_ADDRESS_SANITIZER=ON ;;
+            release) cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSCHEDULER_BUILD_BENCHMARKS=ON ;;
+            thread) cmake -S . -B build -DSCHEDULER_THREAD_SANITIZER=ON -DSCHEDULER_BUILD_BENCHMARKS=ON ;;
+            address) cmake -S . -B build -DSCHEDULER_ADDRESS_SANITIZER=ON -DSCHEDULER_BUILD_BENCHMARKS=ON ;;
           esac
       - run: cmake --build build --parallel 2
       - run: ctest --test-dir build --output-on-failure
@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build and exercise library
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSCHEDULER_BUILD_BENCHMARKS=ON
           cmake --build build --parallel 2
           ctest --test-dir build --output-on-failure
       - name: Install and relocate package
