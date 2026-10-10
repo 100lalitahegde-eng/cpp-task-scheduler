@@ -16,8 +16,32 @@ ctest --test-dir build --output-on-failure
 ./build/batch_example
 ```
 
-The `scheduler` CMake target propagates its include directory and thread dependency.
+The `TaskScheduler::scheduler` CMake target propagates its C++20, include directory
+and thread requirements. The existing `scheduler` target remains available.
 Tests retain assertions in Release builds and have finite CTest timeouts.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for ownership, synchronization and integration boundaries.
+
+## Use in another application
+
+Install a normal Release build:
+
+```sh
+cmake --install build --prefix /path/to/scheduler
+```
+
+Configure your application with `-DCMAKE_PREFIX_PATH=/path/to/scheduler`, then use:
+
+```cmake
+find_package(TaskScheduler 0.4 CONFIG REQUIRED)
+target_link_libraries(my_application PRIVATE TaskScheduler::scheduler)
+```
+
+For source integration, use `add_subdirectory(path/to/cpp-task-scheduler)` and link
+the same target. Tests/examples default off when embedded; standalone builds can
+disable them with `SCHEDULER_BUILD_TESTS=OFF` and `SCHEDULER_BUILD_EXAMPLES=OFF`.
+The library does not change the parent's C++ standard or warning flags.
+The installed package supports relocation and resolves its own thread dependency.
+It is a static package; rebuild with your application's toolchain and standard library.
 
 ```cpp
 Scheduler pool(4, 128); // Four workers, at most 128 WAITING tasks.
@@ -84,6 +108,9 @@ Counters are unsigned 64-bit diagnostics, not persistent accounting.
 CI runs the deterministic, concurrent-race and lifecycle suites plus the example in
 Release, ThreadSanitizer, and AddressSanitizer/UndefinedBehaviorSanitizer configurations.
 These jobs run on pushes and pull requests and fail on sanitizer findings.
+GCC and Clang integration jobs additionally build/test the runtime, install and
+relocate the package, and build/run an independent consumer through both
+`find_package` and `add_subdirectory`.
 
 ```sh
 cmake -S . -B build-tsan -DSCHEDULER_THREAD_SANITIZER=ON
