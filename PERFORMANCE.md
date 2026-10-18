@@ -1,4 +1,4 @@
-# Measured workload evidence
+# Performance measurements
 
 ## Local experiment, 2026-10-10
 
@@ -13,9 +13,8 @@ The shared environment exposed nine affinity CPUs and a cgroup quota of eight
 CPU equivalents. No CPU pinning or exclusive-machine control was used.
 The full build command and resource limits are in the environment record.
 
-The tables show medians across three runs, including medians of each run's p95.
-They are descriptive observations from short synthetic bursts. They are not
-steady-state throughput, statistical confidence intervals or deployment guarantees.
+The tables show medians across three runs, including medians of each run's p95,
+for short synthetic bursts.
 
 ## Queue capacity tradeoff
 
@@ -29,10 +28,8 @@ zero-byte captured payload:
 | Sleep/blocking | 32 | 204 | 1,796 | 17,306 | 2.15 | 2.33 |
 | Sleep/blocking | 256 | 426 | 1,574 | 20,071 | 13.34 | 13.51 |
 
-In these bursts, increasing capacity admitted more work but increased waiting
-latency. Most attempts were rejected in every row. These results do not establish
-a preferred production capacity or imply that an application could sustain
-the reported completion rate indefinitely.
+In these bursts, increasing capacity admitted more work and increased waiting
+latency. Most attempts were rejected in every row.
 
 ## Memory while waiting queue is full
 
@@ -52,15 +49,5 @@ three times capacity, with no execution of rejected work.
 Waiting count was bounded; captured payload size directly affected resident
 memory. Capacity 256 with 64 KiB captures retained 16 MiB of payload alone.
 The RSS deltas additionally include allocator and task overhead and retained
-rejection allocations. This is a saturation snapshot, not peak-memory profiling.
-Active tasks, external futures, callers and arbitrary captures need separate
-budgets in a real application.
-
-## Adoption decision
-
-Choose capacity against an application's admitted-work latency budget and
-capture size, then choose explicit upstream handling of QueueFull.
-Measure the actual workload and arrival pattern on target hardware, including
-multiple producers, prolonged overload and shutdown behavior. Existing sanitizer
-and lifecycle checks plus these experiments are useful evidence; they do not
-establish a production deployment, fairness guarantee or latency SLO.
+rejection allocations. Each sample is taken while the waiting queue is full
+and both workers are gated.
