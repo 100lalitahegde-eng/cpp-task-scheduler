@@ -1,1 +1,30 @@
+# Build trees
 /build*/
+/cmake-build-*/
+/out/
+/install/
+
+# In-source CMake
+/CMakeCache.txt
+/CMakeFiles/
+/cmake_install.cmake
+/CTestTestfile.cmake
+/Testing/
+/compile_commands.json
+/CMakeUserPresets.json
+/DartConfiguration.tcl
+
+# Local benchmark output. Checked-in runs stay under benchmarks/results/local-*/
+/benchmarks/results/my-run/
+
+# Python
+__pycache__/
+*.pyc
+
+# Editor and OS
+.cache/
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store

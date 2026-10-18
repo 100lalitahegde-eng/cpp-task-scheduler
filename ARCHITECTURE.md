@@ -46,15 +46,9 @@ version. Source API and runtime behavior are unchanged by this packaging change.
 Warning-as-error flags remain private. Sanitizer runtime link flags propagate
 only when explicitly enabled; install a normal build for normal consumers.
 
-## Evidence and adoption
+## Verification
 
 CI separates runtime tests (Release, TSan, ASan/UBSan) from GCC/Clang integration
 checks. Integration installs then relocates the package before building a
 separate application; it also checks embedded defaults and warning isolation.
-Workflow definitions describe required checks, not a claim that every commit
-has passed. Inspect the commit's Actions results.
-
-This architecture supports reuse and review. Production readiness still depends
-on workload measurements, operational integration and the documented lifetime
-contract. There is no deployment, latency SLO or platform guarantee from these
-tests alone. Linux GCC/Clang is the CI target; other platforms are unverified.
+The workflow is `.github/workflows/verify.yml`, and it runs on Linux with GCC and Clang.

@@ -1,9 +1,31 @@
 # Bounded concurrent task scheduler — C++20
 
-A reusable worker pool demonstrating bounded admission, explicit lifecycle control,
-exception-safe worker initialization, queued cancellation, and observable task outcomes.
-Designed as a core-systems engineering portfolio project; production suitability must
-be evaluated against the integrating application's workload and failure requirements.
+[![Verify](https://github.com/100lalitahegde-eng/cpp-task-scheduler/actions/workflows/verify.yml/badge.svg)](https://github.com/100lalitahegde-eng/cpp-task-scheduler/actions/workflows/verify.yml)
+
+C++20 worker pool with bounded admission, futures, queued cancellation, and explicit shutdown. `submit` returns a task id and future, or throws `QueueFull` or `Stopped`. Accepted work settles that future with the task result, a task exception, or `Cancelled`. `shutdown` closes admission, drains or cancels waiting work, and joins the workers.
+
+## Results
+
+[Verify](https://github.com/100lalitahegde-eng/cpp-task-scheduler/actions/workflows/verify.yml) runs the deterministic, concurrent-race, and lifecycle suites and the batch example on every push and pull request:
+
+| Configuration | Instrumentation |
+| --- | --- |
+| Release | `CMAKE_BUILD_TYPE=Release` |
+| ThreadSanitizer | TSan (`SCHEDULER_THREAD_SANITIZER`) |
+| AddressSanitizer | ASan + UBSan (`SCHEDULER_ADDRESS_SANITIZER`) |
+
+GCC and Clang integration jobs build the library, install and relocate the package, and compile an independent consumer through `find_package` and `add_subdirectory`.
+
+Finite-burst medians from the local run on 2026-10-10: four workers, 2,000 attempts, 100 µs requested service, zero-byte payload, three fresh-process repetitions. Figures are the medians in [PERFORMANCE.md](PERFORMANCE.md).
+
+| Workload | Capacity | Accepted | Rejected | Completed/s | Queue p95, ms | Total p95, ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| CPU spin | 32 | 229 | 1,771 | 28,833 | 1.23 | 1.34 |
+| CPU spin | 256 | 454 | 1,546 | 32,755 | 8.44 | 8.54 |
+| Sleep/blocking | 32 | 204 | 1,796 | 17,306 | 2.15 | 2.33 |
+| Sleep/blocking | 256 | 426 | 1,574 | 20,071 | 13.34 | 13.51 |
+
+At capacity 256 those bursts accepted more work and recorded higher queue latency than at capacity 32. Gated-overload memory snapshots are in [PERFORMANCE.md](PERFORMANCE.md).
 
 ## Build and run
 
@@ -123,19 +145,21 @@ Coverage includes concurrent producers/cancellation, exception propagation, repe
 construction/destruction, overload and capacity reuse, partial construction failure,
 drain/cancel-pending shutdown, concurrent joining, worker-initiated stop, and submission
 racing shutdown. Gated tests establish required states without sleep-based timing.
-Race tests check futures and execution accounting; passing runs cover exercised
-schedules, not every possible interleaving. See Actions for results of a specific commit.
+Race tests check futures and execution accounting. Results for a commit are on its
+Verify workflow run.
 
-## Operating limits
+Benchmark targets stay off unless `SCHEDULER_BUILD_BENCHMARKS=ON`. The harness and the
+54-row local run are in [benchmarks/README.md](benchmarks/README.md) and
+[PERFORMANCE.md](PERFORMANCE.md).
 
-An optional [benchmark harness](benchmarks/README.md) measures finite CPU/blocking
-bursts and gated overload memory. [PERFORMANCE.md](PERFORMANCE.md) records a local
-54-measurement experiment, raw results and limits; benchmark targets default off.
+## Limits
 
-Running tasks must terminate voluntarily. Shutdown has no deadline and cannot forcibly
-interrupt arbitrary C++ code; a stuck task can block it indefinitely. Callers own object
-lifetime and task-capture lifetimes. The scheduler provides no durability, retries,
-priorities, fairness guarantee, cross-process scheduling, or CPU affinity.
-It has no verified production deployment or workload-specific capacity guarantee.
-Before adoption, measure the real workload's queue delay, task latency and memory under
-its intended worker/capacity settings, and choose the upstream overload policy explicitly.
+- Waiting tasks are bounded by capacity. Running tasks are bounded by the worker count. Bytes captured by a callable are unbounded.
+- A running task runs until it returns. Shutdown waits for it and has no deadline.
+- The caller owns the scheduler object and the lifetimes of values captured by tasks.
+- Durability, retries, priorities, fairness policy, cross-process scheduling, and CPU affinity sit outside this component.
+- The latency table above is the recorded finite-burst experiment in PERFORMANCE.md.
+
+## License
+
+[MIT](LICENSE). Copyright (c) 2026 Lalita Hegade.

@@ -62,8 +62,8 @@ def main():
             Path(__file__).with_name("scheduler_benchmark.cpp").read_bytes()).hexdigest(),
         "cases": len(cases), "compiler": subprocess.run(
             [args.compiler, "--version"], check=True, capture_output=True, text=True).stdout.splitlines()[0],
-        "limits": "Shared environment; no CPU pinning, warmup, baseline executor or SLO. "
-                  "Burst latency samples cover accepted tasks only. RSS includes allocator retention.",
+        "limits": "No CPU pinning or warmup. Latency samples cover accepted tasks only. "
+                  "RSS includes allocator retention.",
     }
     for name in ("cpu.max", "memory.max"):
         path = Path("/sys/fs/cgroup") / name
